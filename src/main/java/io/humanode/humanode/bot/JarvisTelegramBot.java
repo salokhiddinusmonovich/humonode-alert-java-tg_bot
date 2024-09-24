@@ -62,7 +62,7 @@ public class JarvisTelegramBot implements JarvisTelegramBotAPI {
     @Override
     public void sendMessage(String message) {
         if (bot == null) {
-            throw new RuntimeException("The telegram bot is not initialized");
+            throw new RuntimeException("Telegram bot initializatsiya qilinmagan");
         }
 
         Long id = staticCache.getChatId();
@@ -77,12 +77,12 @@ public class JarvisTelegramBot implements JarvisTelegramBotAPI {
         bot.execute(request, new Callback<SendMessage, SendResponse>() {
             @Override
             public void onResponse(SendMessage request, SendResponse response) {
-                log.info("Successfully sent message {}", message);
+                log.info("Xabar muvaffaqiyatli jo'natildi {}", message);
             }
 
             @Override
             public void onFailure(SendMessage request, IOException e) {
-                log.error("Failed sent message {}, cause {}", message, e.getMessage());
+                log.error("Xabarni jo'natishda xatolik {}, sabab {}", message, e.getMessage());
             }
         });
     }
@@ -94,36 +94,36 @@ public class JarvisTelegramBot implements JarvisTelegramBotAPI {
         switch (cmd) {
             case "/register" -> {
                 staticCache.setChatId(u.message().chat().id());
-                sendMessage(SUCCESSFULLY_REGISTERED_MESSAGE);
+                sendMessage("Muvaffaqiyatli ro'yxatdan o'tdingiz");
             }
             case "/timezone" -> {
                 if (args.length > 1 && isValidTimeZoneId(args[1])) {
                     staticCache.setTimeZoneId(args[1]);
-                    sendMessage(SUCCESSFULLY_REGISTERED_TIME_ZONE_ID);
+                    sendMessage("Muvaffaqiyatli vaqt mintaqasini belgiladingiz");
                 } else {
-                    sendMessage("Invalid timezone, example: '/timezone Europe/Chisinau'");
+                    sendMessage("Noto'g'ri vaqt mintaqasi, misol: '/timezone Europe/Chisinau'");
                 }
             }
             case "/enable_notification" -> {
                 staticCache.enable();
-                sendMessage(ENABLE_NOTIF);
+                sendMessage("Bildirishnomalar yoqildi");
             }
             case "/disable_notification" -> {
                 staticCache.disable();
-                sendMessage(DISABLED_NOTIF);
+                sendMessage("Bildirishnomalar o'chirildi");
             }
             case "/get_bioauth_link" -> {
-               applicationEventPublisher.publishEvent(new CustomSpringEvent(this, "get_bioauth_link"));
+                applicationEventPublisher.publishEvent(new CustomSpringEvent(this, "get_bioauth_link"));
             }
-            case "/help" -> sendMessage(HELP);
-            default -> sendMessage(UNKNOWN_COMMAND);
+            case "/help" -> sendMessage("Yordam");
+            default -> sendMessage("Noma'lum buyruq");
         }
     }
 
     private boolean isValidTimeZoneId(String timeZoneId) {
         try {
             ZoneId z = ZoneId.of(timeZoneId);
-            log.info("Time zone is valid {}", z);
+            log.info("Vaqt mintaqasi to'g'ri {}", z);
             return true;
         } catch (Exception e) {
             return false;
