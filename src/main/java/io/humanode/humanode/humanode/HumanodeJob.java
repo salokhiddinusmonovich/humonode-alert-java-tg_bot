@@ -1,3 +1,27 @@
+package io.humanode.humanode.humanode;
+
+import io.humanode.humanode.bot.JarvisTelegramBotAPI;
+import io.humanode.humanode.cache.StaticCache;
+import io.humanode.humanode.dtos.BioAuthStatusDTO;
+import io.humanode.humanode.exceptions.HumanodeException;
+import io.humanode.humanode.utils.CustomSpringEvent;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationListener;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
+import java.util.LinkedHashMap;
+
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -21,13 +45,13 @@ public class HumanodeJob implements ApplicationListener<CustomSpringEvent> {
 
     @Scheduled(cron = "0 */1 * * * *")
     public void checkHumanodeHealthAndBioAuth() {
-        log.info("Humanode salomatligini va bio authni tekshirishga harakat qilinmoqda");
+        log.info("Humanode sog'lig'ini va BioAuth holatini tekshirishga urunib ko'rayapman");
 
         LocalDateTime expiresAt = LocalDateTime.ofInstant(
                 Instant.ofEpochSecond(getBioAuthTime() / 1000), staticCache.getTimeZoneId()
         );
 
-        log.info("Humanode ishlamoqda va yuqorida");
+        log.info("Humanode ishga tushdi");
 
         LocalDateTime now = LocalDateTime.now(staticCache.getTimeZoneId());
 
@@ -38,9 +62,9 @@ public class HumanodeJob implements ApplicationListener<CustomSpringEvent> {
         }
 
         if (remaining <= 5) {
-            log.info("Sizning BioAuthingiz tez orada tugaydi. Qolgan vaqtingiz: {} daqiqa", remaining);
+            log.info("Sizning BioAuth yaqinlashmoqda. Sizda {} minut qolgan", remaining);
             jarvisTelegramBotAPI.sendMessage(
-                    String.format("Sizning BioAuthingiz tez orada tugaydi. Qolgan vaqtingiz: %s daqiqa", remaining)
+                    String.format("Sizning BioAuth yaqinlashmoqda. Sizda %s minut qolgan", remaining)
             );
         }
     }
@@ -51,7 +75,7 @@ public class HumanodeJob implements ApplicationListener<CustomSpringEvent> {
             return;
         }
 
-        log.info("Bio auth ma'lumotlarini olishga harakat qilinmoqda");
+        log.info("BioAuth ma'lumotlarini olishga urunib ko'rayapman");
         LocalDateTime expiresAt = LocalDateTime.ofInstant(
                 Instant.ofEpochSecond(getBioAuthTime() / 1000), staticCache.getTimeZoneId()
         );
@@ -62,13 +86,13 @@ public class HumanodeJob implements ApplicationListener<CustomSpringEvent> {
 
         jarvisTelegramBotAPI.sendMessage(
                 String.format(
-                        "Keyingi BioAuth: %s, qolgan vaqti: %s", expiresAt.format(
+                        "Keyingi BioAuth %s da, qolgan vaqti %s", expiresAt.format(
                                 DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
                         ),
                         remainingTime
                 )
         );
-        log.info("Keyingi BioAuth: {}, qolgan vaqti: {}", expiresAt, remainingTime);
+        log.info("Keyingi BioAuth {}, qolgan vaqti {}", expiresAt, remainingTime);
     }
 
     private String getAuthUrl() {
@@ -93,12 +117,12 @@ public class HumanodeJob implements ApplicationListener<CustomSpringEvent> {
             return url;
         } catch (IOException | InterruptedException e) {
             log.error(e.getMessage());
-            return "Avtorizatsiya uchun URL ololmayapman, loglarni va application.properties'dagi yo'lni tekshiring";
+            return "Autentifikatsiya uchun URL olinmadi, iltimos loglarni va application.properties faylini tekshiring";
         }
     }
 
     private void openTunnel() {
-        log.info("Tunnel ochishga harakat qilinmoqda");
+        log.info("Tunnelni ochishga urunib ko'rayapman");
         ProcessBuilder processBuilder = new ProcessBuilder();
         processBuilder.command("/bin/sh", "-c", tunnelCmd);
         try {
@@ -124,8 +148,8 @@ public class HumanodeJob implements ApplicationListener<CustomSpringEvent> {
             BioAuthStatusDTO response = client.getBioAuthStatus(bioAuthBody);
 
             if (response == null || response.getResult() == null) {
-                jarvisTelegramBotAPI.sendMessage("Muddati vaqtini olish mumkin emas");
-                throw new HumanodeException("Muddati vaqtini olish mumkin emas");
+                jarvisTelegramBotAPI.sendMessage("Muddati tugashini olishning imkoni yo'q");
+                throw new HumanodeException("Muddati tugashini olishning imkoni yo'q");
             }
 
             if (response.getResult() instanceof String) {
@@ -156,8 +180,8 @@ public class HumanodeJob implements ApplicationListener<CustomSpringEvent> {
     }
 
     private Exception generateExpireException() {
-        jarvisTelegramBotAPI.sendMessage("Muddati vaqtini olish mumkin emas");
-        throw new HumanodeException("Muddati vaqtini olish mumkin emas");
+        jarvisTelegramBotAPI.sendMessage("Muddati tugashini olishning imkoni yo'q");
+        throw new HumanodeException("Muddati tugashini olishning imkoni yo'q");
     }
 
     @Override
